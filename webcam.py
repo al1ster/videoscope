@@ -6,10 +6,11 @@ from cv2 import VideoWriter
 from cv2 import VideoWriter_fourcc
 from pynput import keyboard
 
-camid = int(sys.argv[1]) # id камеры
-protfolder = sys.argv[2] # id обследования
-resolh = int(sys.argv[3]) # Разрешение по горизонтали
-resolv = int(sys.argv[4]) # Разрешение по вертикали
+camid = int(sys.argv[1]) # device id
+protfolder = sys.argv[2] # exclamation id from medical information system
+# resolution parameters height and width
+resolh = int(sys.argv[3])
+resolv = int(sys.argv[4])
 isvideo = 0
 vfolder = os.getcwd()+'\\'#+protfolder+'\\'
 
@@ -17,29 +18,29 @@ def for_canonical(f):
     return lambda k: f(l.canonical(k))
 
 def on_snapshot():
-	#Делаем фото
+	#Take photo
 	imgfile = vfolder+time.strftime("%d-%m-%Y-%H-%M-%S")+".jpg"
 	cv2.imwrite(filename=imgfile, img=frame)
 
 def on_start_video_record():
-	#Задаем видеофайл и включаем режим записи потока
+	#Get videofile and start recording
 	isvideo = 1
 	vfile = vfolder + time.strftime("%d-%m-%Y-%H-%M-%S")+".avi"
 	video = VideoWriter(vfile, VideoWriter_fourcc(*'MP42'), 25.0, (resolh, resolv))
 
 def on_stop_video_record():
-	#Останавливаем запись и выключаем режим
+	#Stop recording video
 	isvideo = 0
 	video.release()
 
 def on_exit_scope():
-	#Освобождаем камеру и закрываем окно
+	#Release device and close the application
 	if isvideo == 1:
 		video.release()
 	cv2.destroyAllWindows()
 	webcam.release()
 
-#Получение потока от веб-камеры
+#Getting the stream from device
 webcam = cv2.VideoCapture(camid)
 
 with keyboard.GlobalHotKeys({
@@ -48,33 +49,25 @@ with keyboard.GlobalHotKeys({
 		'<ctrl>+<alt>+x': on_stop_video_record,
 		'<ctrl>+<alt>+e': on_exit_scope}) as h:
 	h.join()
-#Задаем видеофайл для записи потока
-#if isvideo == 1:
-	#vfile = vfolder + time.strftime("%d-%m-%Y-%H-%M-%S")+".avi"
-	#video = VideoWriter(vfile, VideoWriter_fourcc(*'MP42'), 25.0, (resolh, resolv))
 
 while True:
-	#Получаем фрейм от камеры
+	#Getting frame from device
 	stream_ok, frame = webcam.read()
 
 	if stream_ok:
-		#Отображение текущего фрейма
-		#cv2.namedWindow(windowName, cv2.WINDOW_NORMAL)
-		#cv2.setWindowProperty(windowName,cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+		#Showing current frame from device
 		cv2.namedWindow('Celsus.Videoscope', cv2.WND_PROP_FULLSCREEN)
 		cv2.moveWindow('Celsus.Videoscope', 0, 0)
 		cv2.setWindowProperty('Celsus.Videoscope', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 		cv2.imshow('Celsus.Videoscope', frame)
 		if isvideo == 1:
-			#Пишем текущий фрейм в наш файл
+			#Write current frame to our videofile
 			video.write(frame)
 
 		if cv2.waitKey(1) & 0xFF == 27: break
-
-		#Выход из трансляции
 		
 	
-#Освобождаем камеру и закрываем окно
+#Release device and close the application
 if isvideo == 1:
 	video.release()
 cv2.destroyAllWindows()
